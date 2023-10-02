@@ -12,8 +12,9 @@ def load_files(csv_file="",
     [required]npy_file - str: path to the npy file to be loaded with numpy
     returns: a pd.DataFrame and a numpy array
     """
-    print("This function needs to be coded")
-    return 
+    
+    #print("This function needs to be coded")
+    return pd.read_csv(csv_file), np.load(npy_file)
 
 
 def compute_biometric_scores(people, people_embeddings,
@@ -23,9 +24,20 @@ def compute_biometric_scores(people, people_embeddings,
     
     if mode=='only_compare_same_logins':
         distances = []
-        
-        print("This function needs to be coded")
-        
+
+        for idx, connection in connections.iterrows():
+            target_login = connection['logins']
+            target_person = people[people['logins']==target_login]
+            index_of_target_person = target_person.index[0]
+            target_person_emb = people_embeddings[index_of_target_person]
+            connection_emb = connection_embeddings[idx]
+            
+            distance = distance_fct(target_person_emb-connection_emb)
+            
+            distances.append(distance)
+
+        connections['distance']=distances
+        connections.head()
         return distances
     else:
         raise ValueError(f"mode specified unknown. Accepted modes='only_compare_same_logins'. You proposed: {mode}")
@@ -55,7 +67,23 @@ def scatter_plot(X,Y,
 def scores_histogram(true_scores, false_scores,
                      save_figure=False):
     
-    print("This function needs to be coded")
+    fig, ax = plt.subplots(figsize=(10,10))
+
+#scores_histogram(list(connections[connections['true_attempt']==True]['scores']),
+#                 list(connections[connections['true_attempt']==False]['scores']),
+#                 save_figure=False)
+
+    true_list_distances  = true_scores
+    false_list_distances = false_scores
+
+    ax.hist(true_list_distances,  label="true_scores"     ,  bins=100, alpha=0.5)
+    ax.hist(false_list_distances,  label="false_scores" , bins=100, alpha=0.5)
+
+    ax.set_title("Scores of good and bad connections")
+    ax.set_xlabel("Scores")
+    ax.set_ylabel("Amount of scores")
+    ax.legend()
+    plt.show()
     
     if bool(save_figure):
         plt.savefig(save_figure)
@@ -66,8 +94,13 @@ def scores_histogram(true_scores, false_scores,
 def ROC_curve(FAR, TAR,
               save_figure=False):
     fig, ax = plt.subplots(figsize=(10,10))
-    
-    print("This function needs to be coded")
+
+    ax.plot(FAR, TAR)
+
+    ax.set_title("ROC curve")
+    ax.set_xlabel("FAR")
+    ax.set_ylabel("TAR")
+    plt.show()
     
     if bool(save_figure):
         plt.savefig(save_figure)
@@ -75,7 +108,7 @@ def ROC_curve(FAR, TAR,
         plt.show()
     
     
-def who_is_in(people, connections, theshold):
+def who_is_in(people, connections, threshold):
     """ 
     inputs:
     [required] people: pd.DataFrame of registered people, containing logins, passwords
@@ -84,9 +117,41 @@ def who_is_in(people, connections, theshold):
     output:
     accepted: list of booleans, same length as connections, True if the connection attempts has been accepted.
     """
-    
     accepted=[]
+
+    # iterate over the connections pd.DataFrame
+    for index, row in connections.iterrows():
+        # get the login and password of the connection attempt
+        login = row['logins']
+        password = row['passwords']
+        # get the biometric score of the connection attempt
+        score = row['scores']
+        # get the index of the person in the people pd.DataFrame
+        person_index = people[people['logins']==login].index[0]
+        # get the password of the person
+        person_password = people.loc[person_index]['passwords']
+
+        # get the biometric score of the person
+        # check if the password is correct
+
+        ip_connection = row['ips']
+        ip_person = people.loc[person_index]['ips']
+        
+        email_connection = row['logins']
+        email_person = people.loc[person_index]['logins']
+
+        if ip_connection == ip_person and email_connection == email_person and password == person_password:
+            accepted.append(True)
+        else:
+            accepted.append(False)
     
+    return accepted
+
+        
+
+
+    
+        
     print("This function needs to be coded")
     
     return 
